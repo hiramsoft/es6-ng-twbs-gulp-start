@@ -1,7 +1,7 @@
 /**
  * This is the top-level entry point for your application.
- * Because of how es6 + traceur interacts with the DOM, the traditional
- * 1.X AngularJS hooks don't work.  Instead, we need to manually
+ * Because of how es6 + babel interacts with the DOM, the traditional
+ * 1.X AngularJS ng-app hooks don't work.  Instead, we need to manually
  * attach your AngularJS application to the Document DOM element.
  *
  * This file, therefore, refers to the process of bootstrapping
@@ -16,6 +16,9 @@
 // See the JSPM package.json for information on these dependencies
 import $ from 'jquery'; // AngularJS 1.x dependency
 import bootstrap from 'bootstrap'; // twitter bootstrap
+// if you want foundation:
+// cmdline > jspm install foundation
+// import foundation from 'foundation' // Zurb Foundation
 import angular from 'angular';
 import angular_ui_router from 'angular-ui-router';
 

@@ -225,7 +225,7 @@ gulp.task('minifycss', ['copy-css'], function() {
         .pipe(gulp.dest(cssDest));
 });
 
-gulp.task('minifyjs', ['copy-js'], function(){
+gulp.task('minifyjs', ['copy-js', 'copy-es6'], function(){
     return gulp.src([jsSrc, interOutput + "/**/*.js"])
         .pipe(uglify())
         .pipe(gulp.dest(jsDest));
