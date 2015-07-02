@@ -185,7 +185,7 @@ Bootstrap vs Foundation
 --------
 
 I picked Bootstrap because it is more popular, but I gladly use both for different projects.
-[Hiram Software](https://www.hiramsoftware.com) uses Foundation, but [One Step Bingo Card Creator](https://www.hiramsoftware.com/open-bingo) uses Bootstrap.
+[Hiram Software](https://www.hiramsoftware.com) uses Foundation, but [One Step Bingo Card Creator](https://www.hiramsoftware.com/os-bingo-card-creator/) uses Bootstrap.
 
 Foundation is present in the build, just not "enabled."  The Bootstrap styles and fonts are in LESS,
 and the Foundation styles are in SCSS, based on each project's respective decisions.  When you build this starter,

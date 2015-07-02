@@ -105,6 +105,11 @@ function reportChange(event){
     console.log('File ' + event.path + ' was ' + event.type + ', running tasks...');
 }
 
+function errorHandler (error) {
+    console.log(error.toString());
+    this.emit('end');
+}
+
 ////////////////////////////////////////
 //////// Build tasks (i.e. take input files and transform)
 ////////////////////////////////////////
