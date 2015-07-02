@@ -133,14 +133,14 @@ The fundamental issue is that while each type of file gets copied or compiled di
 Take for example, three files.
 
 * my-es6-source.js
-* my-es6-legacy-source.js
+* my-es5-legacy-source.js
 * my-vendor-library.min.js
 
 Each of these files has a "js" extension, so we can treat them all as JavaScript, right?
 
 Well, not exactly.  The first file is actually ES6.  And for the time being we need to transpile (or compile) the ES6 code down to ES5.  This file gets treated WAY 1.
 
-The second file is existing JS code that I wrote and want to minified.  I may also want it concatenated with my ES6 code.  This file gets treated WAY 2.
+The second file is existing ES5 JS code that I wrote and want to minified.  I may also want it concatenated with my ES6 code.  This file gets treated WAY 2.
 
 The third file was provided by a vendor, and since I don't trust using CDNs, I plan to host the file myself.  Since the file is
 already minified, and because of bad experiences running Babel over it, I want that vendor library file copied verbatim.  This file gets treated WAY 3.
@@ -223,7 +223,8 @@ I'm unfamiliar with [Broccoli](http://broccolijs.com/), and I've never seen it i
 
 I'm unfamiliar with [Brunch](http://brunch.io/), but the conventions it chose on the surface seem to clash with this project.
 For example, "JS files will be automatically concatenated."  I don't want source ES6 files with ".js" extensions to be concatenated.
-I want JSPM and Babel to compile them.  I could see concatenating the build.js file with other JS files, but where does build.js go?  I'm sure there is a way around this, but I given Brunch is much less popular
+I want JSPM and Babel to compile them.  I could see concatenating the build.js file with other JS files, but where does build.js go?
+I'm sure there is a way around this, but given Brunch is much less popular
 I withdrew consideration based on the expected the learning curve.
 
 
