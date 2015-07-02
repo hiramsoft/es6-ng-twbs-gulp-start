@@ -1,0 +1,15 @@
+{%  extends './_layout/default.html' %}
+
+{% block content %}
+<!-- Begin Header -->
+<header class="container" ui-view="topnav">
+    <!-- Headers delivered by the abstract parents -->
+</header>
+<!-- End Header -->
+
+<!-- Begin Main Content -->
+<div class="container" ui-view="content" ng-cloak>
+    <!-- Content delivered by the partials -->
+</div>
+<!-- End Main Content -->
+{% endblock %}
