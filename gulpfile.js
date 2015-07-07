@@ -1,6 +1,7 @@
 /**
  *      ES6-AngularJS-TwitterBootstrap-Gulp Starter
  *      Copyright 2014-2015 Hiram Software
+ *      See https://github.com/hiramsoft/es6-ng-twbs-gulp-start for more information
  *
  *      This is the file that builds your site based on Gulp
  *      http://gulpjs.com/
@@ -20,6 +21,7 @@
 
 
 // Dependencies
+var _ = require('lodash');
 var gulp = require('gulp');
 var clean = require('gulp-clean');
 var less = require('gulp-less');
@@ -30,7 +32,6 @@ var sourcemaps = require('gulp-sourcemaps');
 var plumber = require('gulp-plumber');
 var minifyCSS = require('gulp-minify-css');
 var rename = require("gulp-rename");
-var htmlreplace = require('gulp-html-replace');
 var shell = require('gulp-shell');
 var uglify = require('gulp-uglify');
 var revision = require('git-rev');
@@ -38,6 +39,12 @@ var swig = require('gulp-swig');
 var gls = require('gulp-live-server');
 var concatCss = require('gulp-concat-css');
 var sizereport = require('gulp-sizereport');
+var frontMatter = require('gulp-front-matter');
+var marked = require('marked');
+var markedTransform = require('gulp-marked').fileTransform;
+var through = require('through2');
+var insert = require('gulp-insert');
+
 
 ////////////////////////////////////////
 //////// Configuration
@@ -92,8 +99,13 @@ var jsDest = baseDestPath;
 var es6Src = [baseMainPath + '/es6/**/*.js', baseMainPath + '/es6/**/*.es6'];
 
 //////// Note that '_layout' is excluded
-var htmlSrc = ['!' + baseMainPath + '/html/{_layout,_layout/**}', baseMainPath + '/html/**/*.html'];
+var layoutDir = "_layout";
+
+var htmlSrc = ['!' + baseMainPath + '/html/{' + layoutDir + ',' + layoutDir + '/**}', baseMainPath + '/html/**/*.html'];
 var htmlDest = baseDestPath;
+
+var mdSrc = [baseMainPath + "/markdown/**/*.md", baseMainPath + "/markdown/**/*.markdown"];
+var mdDest = baseDestPath;
 
 var staticSrc = baseMainPath + '/static/**/*';
 var staticDest = baseDestPath;
@@ -111,44 +123,163 @@ function errorHandler (error) {
 }
 
 ////////////////////////////////////////
+//////// HTML and Markdown Helpers
+////////////////////////////////////////
+
+/**
+ * Credit: gulp-replace
+ */
+function parsePath(p) {
+    var extname = path.extname(p);
+    return {
+        dirname: path.dirname(p),
+        basename: path.basename(p, extname),
+        extname: extname
+    };
+}
+
+/**
+ * Given output from marked and frontMatter,
+ *  - pretend that the file is an HTML file in $htmlSrc (rewrite $file.path)
+ *  - render the HTML using marked (either in streaming or buffer mode)
+ *  - wrap the file contents in {% extends $frontMatter.layout %} {% block contents %} $file.contents {% endblock %}
+ */
+function applyMarkdownAndSwig(layoutDir) {
+    return through.obj(function (file, enc, cb) {
+
+        if (file.isNull()) {
+            return cb(null, file);
+        }
+
+        if (!file.frontMatter || !file.frontMatter.layout || file.frontMatter.layout.length == 0) {
+            return cb(null, file);
+        }
+
+        // firstly, to be compatible with gulp-data, merge front-matter into data attribute
+        // so variables can be referenced from within the swig template
+        file.data = file.data || {};
+        file.data = _.merge(file.data, file.frontMatter);
+
+        var parsedPath = parsePath(file.path);
+
+        // For swig to work, we need to make it look like the reslting HTML is inside the HTML directory
+        parsedPath.dirname = parsedPath.dirname.replace("/markdown/", "/html/");
+        file.base = file.base.replace("/markdown/", "/html/");
+
+        // Allow users to set the slug (i.e. the url) via the front-matter
+        if(file.data.slug && file.data.slug.length > 0){
+            var slug = path.basename(file.data.slug);
+            parsedPath.basename = slug;
+            file.data.slug = slug + ".html";
+        } else {
+            // TODO: Add in a hook to calculate the slug using something :)
+        }
+
+        file.path = path.join(parsedPath.dirname, parsedPath.basename + ".html");
+
+        var layout = file.data.layout;
+        if(layoutDir){
+            var resolvedDir = path.resolve(path.dirname(file.path), path.join(file.base, layoutDir));
+            layout = path.join(resolvedDir, layout);
+        }
+
+        if(path.extname(layout) != ".html"){
+            layout = layout + ".html";
+        }
+
+        var prepend = "{% extends '" + layout + "' %}\n\n{% block content %}\n";
+        var append = "\n{% endblock %}";
+
+        if (file.isStream()) {
+            // And we want swig to think the HTML is part of a layout
+            file.contents = file.contents
+                .pipe(markerTransform({}))
+                .pipe(insert.wrap(prepend,append))
+            ;
+
+            return cb(null, file);
+        }
+
+        if (file.isBuffer()) {
+            marked(String(file.contents), function(err, content){
+                if(err){
+                    cb(err);
+                } else {
+                    var str = prepend + String(content) + append;
+                    file.contents = new Buffer(str);
+                    cb(null, file);
+                }
+            })
+        }
+    })
+};
+
+/**
+ *  Adds in revision information to the file.data object
+ *  so it may be used by swig
+ */
+function addRevSettings(){
+    return through.obj(function (file, enc, cb) {
+        var gitInfo = {
+            short: "Development",
+            branch: "master"
+        };
+        revision.short(function (str) {
+            gitInfo.short = str;
+            revision.branch(function (str) {
+                gitInfo.branch = str;
+
+                var relPath = path.relative(path.dirname(file.path), file.base);
+
+                file.data = file.data || {};
+                file.data.css = path.join(relPath, cssBasename + ".css");
+                file.data.gitRevShort = gitInfo.short;
+                file.data.gitBranch = gitInfo.branch;
+
+                for (var i in jspmBundleSfx) {
+                    var jspm = jspmBundleSfx[i];
+                    file.data['js' + jspm.id] = path.join(relPath, jspm.out);
+                }
+
+                cb(null, file);
+            })
+        });
+    });
+};
+
+////////////////////////////////////////
 //////// Build tasks (i.e. take input files and transform)
 ////////////////////////////////////////
 
-// Copies index.html, replacing <script> and <link> tags to reference production URLs
-gulp.task('build-html', function(cb) {
-    var gitInfo = {
-        short : "Development",
-        branch: "master"
-    };
-    revision.short(function (str) {
-        gitInfo.short = str;
-        revision.branch(function (str) {
-            gitInfo.branch = str;
-
-            var htmlreplaceParams = {
-                'css': cssBasename + '.css',
-                'gitRevShort' : gitInfo.short,
-                'gitBranch': gitInfo.branch
-            };
-
-            for(var i in jspmBundleSfx){
-                var jspm = jspmBundleSfx[i];
-                htmlreplaceParams['js' + jspm.id] = jspm.out;
+// Copies *.html files, applies swig templates,
+// and makes available variables to populate <script> and <link> tags with production URLs
+gulp.task('build-html', function() {
+    return gulp.src(htmlSrc)
+        .pipe(addRevSettings())
+        .pipe(swig({
+            defaults: {
+                cache: false,
+                varControls : ['%{{', '}}%']
             }
-
-            gulp.src(htmlSrc)
-                .pipe(swig({
-                    defaults: {
-                        cache: false,
-                        varControls : ['%{{', '}}%']
-                    }
-                }))
-                .pipe(htmlreplace(htmlreplaceParams))
-                .pipe(gulp.dest(htmlDest));
-            cb();
-        });
-    });
-
+        }))
+       .pipe(gulp.dest(htmlDest));
+});
+// Renders
+gulp.task('build-markdown', function() {
+    return gulp.src(mdSrc)
+        .pipe(frontMatter({ // optional configuration
+            property: 'frontMatter', // property added to file object
+            remove: true // should we remove front-matter header?
+        }))
+        .pipe(applyMarkdownAndSwig(layoutDir))
+        .pipe(addRevSettings())
+        .pipe(swig({
+            defaults: {
+                cache: false,
+                varControls: ['%{{', '}}%']
+            }
+        }))
+        .pipe(gulp.dest(mdDest));
 });
 
 gulp.task('build-less', function () {
@@ -287,7 +418,7 @@ gulp.task('sizereport', function() {
 
 gulp.task('default', ['build', 'copy']);
 
-gulp.task('build', ['bundle-jspm', 'build-less', 'build-scss', 'build-html']);
+gulp.task('build', ['bundle-jspm', 'build-less', 'build-scss', 'build-html', 'build-markdown']);
 
 gulp.task('copy', ['copy-fonts', 'copy-static', 'copy-css', 'copy-data', 'copy-js', 'copy-es6']);
 
@@ -295,7 +426,8 @@ gulp.task('watch', ['default'], function() {
     gulp.watch([lessSrc], ['copy-css']).on('change', reportChange);
     gulp.watch([scssSrc], ['copy-css']).on('change', reportChange);
     gulp.watch([es6Src], ['copy-es6']).on('change', reportChange);
-    gulp.watch([htmlSrc], ['build-html']).on('change', reportChange);
+    // Note: Markdown depends on the HTML templates, which is why the two are coupled
+    gulp.watch([htmlSrc, mdSrc], ['build-html', 'build-markdown']).on('change', reportChange);
 
     gulp.watch([fontsSrc], ['copy-fonts']).on('change', reportChange);
     gulp.watch([staticSrc], ['copy-static']).on('change', reportChange);

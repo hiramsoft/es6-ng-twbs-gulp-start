@@ -10,6 +10,10 @@
                 <span ng-show="remoteTime">{{remoteTime | fromNow}}</span>
                 <span ng-hide="remoteTime">Loading... <span class="glyphicon glyphicon-refresh glyphicon-road"></span></span>
             </dd>
+            <dt>Client Revision</dt>
+            <dd>
+                %{{gitRevShort}}% / %{{gitBranch}}%
+            </dd>
         </dl>
     </div>
 </div>

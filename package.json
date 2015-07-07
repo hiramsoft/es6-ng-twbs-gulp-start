@@ -21,6 +21,7 @@
     }
   },
   "devDependencies": {
+    "lodash" : "~3.10.0",
     "gulp": "~3.8.11",
     "jspm": "~0.15.1",
     "gulp-sourcemaps": "~1.5.1",
@@ -33,7 +34,6 @@
     "autoprefixer-core": "~5.1.8",
     "gulp-postcss": "~4.0.3",
     "gulp-rename": "~1.2.2",
-    "gulp-html-replace": "~1.4.4",
     "gulp-requirejs-bundler": "~0.1.1",
     "systemjs-builder": "~0.10.3",
     "gulp-shell": "~0.4.0",
@@ -43,6 +43,11 @@
     "git-rev": "~0.2.1",
     "gulp-live-server": "~0.0.19",
     "gulp-concat-css": "~2.2.0",
-    "gulp-sizereport": "~1.1.2"
+    "gulp-sizereport": "~1.1.2",
+    "gulp-front-matter": "~1.2.3",
+    "gulp-marked": "~1.0.0",
+    "through2" : "~2.0.0",
+    "marked": "~0.3.3",
+    "gulp-insert" : "~0.4.0"
   }
 }

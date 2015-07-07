@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <title>%{{title}}%</title>
+
+    <link rel="stylesheet" href="%{{ css }}%">
+
+    <script src="%{{ jsmain }}%"></script>
+
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        <article class="col-sm-12">
+            <h1>
+                <a href="%{{slug}}%">
+                    Blog post: %{{title}}%
+                </a>
+            </h1>
+            <em>Date: %{{date}}%</em>
+
+            {% block content %}{% endblock %}
+        </article>
+    </div>
+</div>
+
+
+</body>
+</html>
