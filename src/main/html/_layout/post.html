@@ -1,32 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta charset="UTF-8">
-    <title>%{{title}}%</title>
+{% extends './blog.html' %}
 
-    <link rel="stylesheet" href="%{{ css }}%">
+{% block body %}
 
-    <script src="%{{ jsmain }}%"></script>
+<div class="blog-post">
+    <h2 class="blog-post-title">
+        <a href="%{{url}}%">
+            %{{title}}%
+        </a>
+    </h2>
+    <p class="blog-post-meta">
+        %{{displayDate}}%
+    </p>
 
-</head>
-<body>
+    {% block content %}{% endblock %}
 
-<div class="container">
     <div class="row">
-        <article class="col-sm-12">
-            <h1>
-                <a href="%{{slug}}%">
-                    Blog post: %{{title}}%
-                </a>
-            </h1>
-            <em>Date: %{{date}}%</em>
-
-            {% block content %}{% endblock %}
-        </article>
+        <span class="lead">Tagged</span>
+        {% for category in categories %}
+        <span class="tag">
+            <a href="%{{site.relpath('/blog/tag')}}%/%{{category}}%.html">
+                %{{category}}%
+            </a>
+        </span>
+        {% endfor %}
     </div>
-</div>
 
+</div><!-- /.blog-post -->
 
-</body>
-</html>
+{% endblock %}

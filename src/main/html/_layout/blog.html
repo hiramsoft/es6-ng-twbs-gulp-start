@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <title>%{{title}}%</title>
+
+    <link rel="stylesheet" href="%{{ cssblog }}%">
+
+    <script src="%{{ jsmain }}%"></script>
+
+</head>
+<body>
+
+    <div class="blog-masthead">
+        <div class="container">
+            <nav class="blog-nav">
+                <a class="blog-nav-item" href="%{{site.docpath('/index.html')}}%">Home</a>
+                <a class="blog-nav-item active" href="%{{site.docpath('/blog/index.html')}}%">Blog</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="blog-header">
+            <h1 class="blog-title">
+
+
+                <a href="%{{site.docpath('/blog/')}}%">
+                    The Bootstrap Blog
+                </a>
+
+
+            </h1>
+            <p class="lead blog-description">The official example template of creating a blog with Bootstrap.</p>
+        </div>
+
+        <div class="row">
+
+            <div class="col-sm-8 blog-main">
+
+                {% block body %}
+
+                {% endblock %}
+
+            </div><!-- /.blog-main -->
+
+            <div class="col-sm-3 col-sm-offset-1 blog-sidebar">
+                <div class="sidebar-module sidebar-module-inset">
+                    <h4>About</h4>
+                    <p>Etiam porta <em>sem malesuada magna</em> mollis euismod. Cras mattis consectetur purus sit amet fermentum. Aenean lacinia bibendum nulla sed consectetur.</p>
+                </div>
+                <div class="sidebar-module">
+                    <h4>Archives</h4>
+                    <ol class="list-unstyled">
+                        {% for group in site.dateGroups %}
+                            <li>
+                                    %{{ group.title }}%
+                            </li>
+                            <ol>
+                                {% for post in group.posts %}
+                                <li>
+                                    <a href="%{{post.url}}%">
+                                        %{{post.data.title}}%
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ol>
+                        {% endfor %}
+                    </ol>
+                </div>
+
+                <div class="sidebar-module">
+                    <h4>Categories</h4>
+                    <ol class="list-unstyled">
+                        {% for category in site.categories %}
+                        <li>
+                            <a href="%{{site.relpath('/blog/tag/')}}%/%{{loop.key}}%.html">
+                                %{{loop.key}}%
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+                <div class="sidebar-module">
+                    <h4>Elsewhere</h4>
+                    <ol class="list-unstyled">
+                        <li><a href="#">GitHub</a></li>
+                        <li><a href="#">Twitter</a></li>
+                        <li><a href="#">Facebook</a></li>
+                    </ol>
+                </div>
+            </div><!-- /.blog-sidebar -->
+
+        </div><!-- /.row -->
+
+    </div><!-- /.container -->
+
+<!-- Begin Footer -->
+
+<footer class="row">
+    <div class="col-xs-12 text-center">
+        <small>
+            Copyright &copy; 2015 Example Corporation
+            |
+            Revision
+            %{{ gitRevShort }}%
+        </small>
+    </div>
+</footer>
+
+<!-- End Footer -->
+
+
+</body>
+</html>

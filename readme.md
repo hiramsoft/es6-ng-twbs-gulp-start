@@ -1,10 +1,12 @@
-ECMAScript 6 + AngularJS + Twitter Bootstrap + JSPM Starter
+ECMAScript 6 + AngularJS + Twitter Bootstrap + JSPM + Jekyll Starter
 ===============
 
 Take advantage of ES6 and AngularJS today.
 
-This project is a boilerplate to start out making your new web project (single page app or not)
+This project is a boilerplate to start out making your new web project (single page app, blog, or whatnot)
 without having to remember or re-figure out how to get ES6 and AngularJS 1.x to play well together.
+
+It also includes support for compiling **[Jekyll](http://jekyllrb.com/)-like blogs** using only Gulp.  (Feature creep, anyone?)
 
 This project is pre-configured so you can hit the ground running using the following setup:
 
@@ -14,14 +16,16 @@ This project is pre-configured so you can hit the ground running using the follo
 * [Twitter Bootstrap 3.X](http://getbootstrap.com/)
 * [MomentJS](http://momentjs.com/) (the only way to do date and time manipulation)
 * [Hiram ES6 Logger](https://github.com/hiramsoft/es6-logger) (make $log available in your code with imports)
-* [Swig templates](http://paularmstrong.github.io/swig/)
-     * Note! Variables are defined by `%{{` and `}}%` so swig and angular can work together 
+* [Swig templates](http://paularmstrong.github.io/Swig/)
+     * Note! Variables are defined by `%{{` and `}}%` so Swig and angular can work together
+* [Marked](https://github.com/chjj/marked) (markdown support)
 * [Gulp](http://gulpjs.com/) (how to build)
 
 Get started
 ========
 
 1. Clone or download this repository.
+2. I expect you to delete most of the content in src, especially the blog.  This site is a [Duck](http://blog.codinghorror.com/new-programming-jargon/).
 
 Notes for experienced people
 ---------
@@ -34,6 +38,13 @@ Notes for experienced people
     2. jspm to do packaging
     3. Swig templates
 5. Be wary about updating Babel or JSPM... there have been build breaks when naively updating to the latest.
+
+How to Develop (and see a local demo)
+=======
+1. `npm install`
+2. `jspm install`
+3. `gulp serve`
+4. fire up your favorite browser and go to [http://localhost:8080](http://localhost:8080)
 
 Orientation
 =====
@@ -58,18 +69,186 @@ General overview:
 * *src/main/html* - Where your HTML templates live.
 * *src/main/less* - Where the LESS templates are.
 * *src/main/static* - Where static items to copy verbatim, like images, should go.
+* *src/main/markdown* - Where markdown files go. The gulp file switches paths around so the pipeline thinks the files are in HTML
+* *src/main/generated* - Where HTML templates go that the gulp file uses to generate other files.  Used for generating index files, for example.
 * *dist/* - Where your code gets built.
 * *target/* - Some tasks require intermediate output, and they get put here.
 * *package.json* - JSPM package definition
 * *config.js* - JSPM configuration script
 
+Note that the JavaScript and Style files are grouped into bundles, whose paths are available as Swig template variables.
 
-How to Develop
+For example, if you have a JavaScript bundle called "myapp", there will be a Swig variable %{{ jsmyapp }}%
+that resolves to the relative path of the built JavaScript file.  Note the "js" prefix for javascript,
+and there is a "css" prefix for style bundles.
+
+The Gulpfile
 =======
-1. `npm install`
-2. `jspm install`
-3. `gulp serve`
-4. fire up your favorite browser and go to [http://localhost:8080](http://localhost:8080)
+The gulpfile is a work in progress.  I am conscious about its length, and have a desire to split it up.
+
+Currently the file is broken into three broad parts:
+
+1. Configuration
+    1. Where you configure bundles of JavaScript and CSS to be produced.
+    2. You also can change paths and formatting.
+2. Gulp Tasks
+    1. There are porcelain tasks such as *build*, *clean*, *serve*, and *dist*
+3. Pipeline implementation for Jekyll-like behavior
+    1. Supporting the Jekyll features required writing new pipeline implementations.
+    2. Supports passing through the files twice, once to create an index, and the second to compile.
+    3. Supports generating files based on the "generated" folder to create index files and category files.
+
+
+At Hiram Software we use this gulpfile in other projects (we copy-paste it as needed),
+and that behavior is what has added friction to splitting the file up.
+
+Important Note on Markdown Folder
+=======
+
+The gulp file will compile files in the markdown folder using similar logic as [Jekyll](http://jekyllrb.com/).
+When combined with generated files in the generated folder, you can use this as a drop-in replacement for Jekyll.
+
+The gulp file rewrites the [Vinyl](https://github.com/wearefractal/vinyl) file objects so that the markdown files appear as if they are in the HTML folder.
+We do this so the Swig templates work as expected, should you put Swig variables inside your markdown.
+
+Front Matter variables
+-----
+
+You may use front matter.  The gulp file treats the following specially, but any variable defined in front matter
+will be available as Swig variables (i.e. `%{{ myVariable }}%` )
+
+* **layout**: If present, the markdown file will be wrapped by the following Swig tag.
+    * Note that layoutDir is defined in the gulp file so it can resolve the path.
+    
+        {% extends '$layoutDir/$layout %}
+        {% block content %}
+        [markdown content goes here]
+        {% endblock %}
+* **published**: If present and set to YAML false, the file is skipped
+* **date**: If present, parsed as a `moment("YYYY-MM-DD")` or `moment("YYYY-MM-DD HH:mm")`.
+* **slug** or **permalink**: If present, used to form the target filename.
+    * Does not accept variables, used literally for just this file.
+    * Can use with paths, i.e. slug = best-of/my-favorite-blog-post
+* **categories**: If present, used to populate the categories of the post.
+    * If it is a YAML list, each item is treated as a separate category.  Use a YAML list if your categories have spaces.
+    * If it is a string, the value is split by whitespace and each word is a separate category.
+    * Category names are not yet normalized (i.e. all lowercase, etc).
+* **category**: If present, the whole string is assumed to be one category.  May be used in conjunction with categories.
+* **tags**: Similar to categories, but collected into a "tags" variable.
+* **tag**: Similar to category, but collected into a "tags" variable.
+
+The following variables are computed and available within the Swig template:
+
+* **displayDate**: If the date could be computed, this is a string formatted so you may put it in a byline.
+* **year**: If the date could be computed, this will have the year
+* **month**: If the date could be computed, this will have the month
+* **day**: If the date could be computed, this will have the day
+* **url**: The page's relative URL.  Safe for putting within HREFs.
+
+Relative Path Helpers
+-----
+
+One important difference with Jekyll is that all paths are relative.
+This is by design, and a "Good Thing" described below in the design decisions.
+
+All pages have available a Swig variable called "site" that includes global settings across the site and is recalculated per page.
+
+In particular, there are methods to be aware of that are designed for use in HREFs and SRCs:
+
+1. site.relpath(absurl): Given an absolute path suche as "/blog/" will compute the relative path i.e. "../../blog/"
+2. site.docpath(absurl): Same as relpath, but additionally assume there is an html document in the path and will add "index.html" as needed.
+3. site.postpath(slug): Given a slug of a markdown post, compute the relative path to it.
+
+
+Say for example, you have a blog post that after applying the slug will be at `/2000/01/01/y2k-is-here.html`.
+You would like a link back to the blog index, located at "/index.html".
+Rather than use an absolute path, you can use the array in a Swig expression `href="%{{site.docpath("/")}}%"`
+to provide the relative path (in this case "../../../index.html").
+Web browsers can handle absolute and relative paths with similar ease.  Your users won't see the difference.
+
+Let's say you want a direct link to the y2k blog post from anywhere on your site.  You would use the Swig expression
+`href="%{{site.postpath("y2k-is-here")}}%"`.
+
+In markdown there are shorthand available to avoid dealing with swig directly:
+ 
+1. url:absurl -> site.relpath(absurl)
+2. doc:absurl -> site.docpath(absurl)
+3. post:slug -> site.postpath(slug)
+
+You can safely put these expressions within markdown links such as
+    
+    [My link to my favorite blog post](post:y2k-is-here)
+    
+Isn't that much easier than the alternatives?
+
+A note about filenames
+-----
+
+Following the Jekyll convention, the gulp file will check if the filename starts with a date ("YYYY-MM-DD").
+If so, and if the front-matter is missing a valid date, the gulp file will use the date from the URL.
+The gulpfile then populates `displayDate`, etc, with values based on the computed date.
+
+    There is a function calcSlug() in the gulpfile you can use to calculate your own default logic.
+    The current default is to replicate the default jekyll behavior.
+
+A note on the \_posts folder
+-----
+
+Within the markdown directory only, gulp will process files in folders starting with a "\_"
+but will assume the files are actually located in parent of the "\_" folder.
+
+For example, if you have a "`blog/\_posts/legacy-posts/my-blog-article.md`",
+gulp will process the file like
+`blog/my-blog-article.md`.
+
+The reason is that in practice most people use either the permalink (or slug) variable or the default slug definition
+to set the final path of "my-blog-article.md" and prefer to keep the organization within "\_posts" to be private.
+
+
+Working examples are within the blog folder
+-----
+
+I've tried to include multiple examples within the "blog" to showcase different approaches and interactions
+between Gulp, Swig, and Markdown.
+
+Generated folder
+======
+
+The basic premise of the "generated" folder is to use each html file as a template to generate other HTML files.
+
+For example, say you want to create a paged listing of blog postings with filenames "index.html", "index-1.html", etc.
+
+You would create a template of the HTML inside the generated folder, placed within the subdirectory of your choosing.
+
+Gulp uses the front matter to figure out what to generate.
+Gulp rewrites the path so the pipeline believes the file is actually in the HTML folder.
+One consequence of this is that you cannot use Swig to reference other generated files, but Swig can reference
+layouts and other HTML files that are defined in the HTML folder.
+
+Front matter used to generate files
+-----
+
+Just like markdown, the front matter variables are available as Swig variables.
+There are three special-case values of front-matter variables:
+
+* **collection**: The name of an attribute that is located on the site (technically siteContext) object.  Common ones:
+    * postPages: An array of pages, each page having at most a configured number of posts.  Most recent posts first.  Useful for generating the index.  $key is the zero-based index.
+    * categories: An array of categories, where each category has an array of posts. $key is the categoryName.
+    * tags: An array of tags, where each category has an array of posts. $key is the tagName.
+    * files: An array of all non-generated files.
+* **filename0**: If present, the pattern to use for the first filename.
+* **filename**: *Required*: The pattern of the generated filename.  Use `$key` to stand in for the instance's key, i.e. "index-$key.html"
+
+Within the Swig template there are variables that now become available:
+
+* **collection**: The array or collection values.  If you used postPages, this would be all the posts on a paricular page.
+* **collectionKey**: The current key
+* **collectionI**: The zero-based index of the current collection.
+* **keys**: An array of all keys for this collection
+* **nextKey**: The next key in the collection (basically keys[collectionI + 1]). Null at boundary.
+* **prevKey**: The prev key in the collection (basically keys[collectionI - 1]). Null at boundary.
+* **nextFilename**: The next filename, intended to put in a "next" link.  Null at boundary.
+* **prevFilename**: The prev filename, intended to put in a "prev" link.  Null at boundary.
 
 How to build for Production
 ======
@@ -82,7 +261,7 @@ How to build for Production
 Behind the scenes, gulp is following the instructions from [JSPM](http://jspm.io).  As of Q2 2015, it looks something like this:
 
 1. Run `jspm bundle-sfx app/bootstrap`
-2. Run a bunch of gulp plugins to compile the less, sass, html, swig templates, etc
+2. Run a bunch of gulp plugins to compile the less, sass, html, Swig templates, etc
 3. Change the includes on index.html to the resulting 'build.js' file
 
 Why does this exist?
@@ -108,6 +287,28 @@ of the issues at once:
 * "How do I separate my router logic from the top-level app?"
 * "How do I build and deploy my JS, CSS, and HTML?"
 * "How do I use libraries that are not yet ready for ES6?"
+* "How do I write longform content using markdown and still integrate into my ES6 and AngularJS static site?"
+
+Jekyll-like behavior background
+=======
+
+In the beginning this project only compiled HTML, JavaScript, and CSS to demonstrate how to use AngularJS with ES6.
+
+We used this starter project at [Hiram Software](https://www.hiramsoftware.com) for 6 months with a variety of projects.
+Eventually we got to the point of wanting to write some content in markdown and publishing to HTML.
+The first set of changes were mild, but then we eventually got to Jekyll:
+
+1. We added a new "markdown" folder, which then used [marked](https://github.com/chjj/marked)
+2. But, alas, it's not enough to compile markdown.  The markdown is the body, and we want it to appear within our Swig layouts.  We added support for setting the layout variable.
+3. This is great, but how do we generate the HREFs and SRCs to get style and scripts in these guides?  We added the relative path support.
+4. Ok, it would be great if a guide could have a consistent table of contents on each file. How do we generate TOCs on each file?  How do we generate index files?  We added generated file support.
+5. Wow, this is so close to what Jekyll does.  So we added a few final features like the slug and built out a sample blog site.
+
+Why don't we split the Jekyll features from the ES6 features?
+The short answer is I agree with the principle, but I don't yet see a clear line to do so.
+Another way to put it, the Jekyll features are a superset of compiling ES6 for AngularJS.
+If there were a way to package up just the gulp file and release that, then I could see splitting this starter
+into two demos -- one for AngularJS and the other for Jekyll.
 
 Design decisions
 ==========
@@ -181,6 +382,23 @@ There are three reasons:
     * The Standard Directory Layout is well known, arguably better known than the "app" convention, which means this codebase should be more approachable.
 * Where do you put tests?  Just as there is no convention on where to put source code, there is similarly no convention on where to put tests.  Maven gives us an answer.
 
+Blog Paths are Relative
+--------
+
+Within the generated and markdown folders, whenever a path is calculated, we do so using relative paths.  This is a feature.
+
+The primary reason for this is you never know what will be the parent of static site.
+You can't guarantee it will be hosted on the root directory "forever."
+
+Using relative paths enables two scenarios.  First, it enables you generate a portion of your overall site without having
+a dependency elsewhere.  If you want to use this build only the "docs" folder, you can do so knowing that there will not
+be inadvertant links to the root folder.
+
+Second, if you are like me, you may want to archive content a few years after it is no longer actively maintained.
+I typically copy the static site into a sub directory of an archive site.
+It sure is a pain when I realize the site has absolute URLs.  The [Hiram Pages Bridge](https://github.com/hiramsoft/hp-bridge) has a similar pain.
+Using relative paths enables archiving without making any changes.
+
 Bootstrap vs Foundation
 --------
 
@@ -227,7 +445,28 @@ I want JSPM and Babel to compile them.  I could see concatenating the build.js f
 I'm sure there is a way around this, but given Brunch is much less popular
 I withdrew consideration based on the expected the learning curve.
 
+**Gulp vs metalsmith**
+
+I really like [metalsmith](http://www.metalsmith.io/) and have used it elsewhere.
+That said, I like the idea of having one build script more than I like trying to put two conceptual models together.
+There are projects like [gulpsmith](https://github.com/pjeby/gulpsmith) to help, but I view those as stop-gaps during
+transitions.  Since this is a new project, there doesn't seem to be a reason to be in transition.
+
+Further, after battling with the confusing documentation on streams, I eventually discovered how to insert "fake" Vinyl
+files into the stream and create generated content.  This obviated any need to metalsmith.
+
+If you are curious, the NodeJS documentation assumes you want to implement a Stream interface and not necessarily
+consume the interface.  In practice with pipe() you are consuming the interface.  There also isn't clear documentation
+on how to signal the end of a stream -- the answer is `this.push(null)` and not `this.emit('end')`.
 
 **Gulp vs Unknown**
 
 I don't know what I don't know.  I know Gulp.
+
+Todos
+=====
+
+Some known issues and features:
+
+1. I'm uncomfortable how this gulpfile has become the kitchen sink.  In many ways it has been the focus of the project even though the original motivation is ES6 and AngularJS.
+2. The relative paths are quirky because nodejs path is quirky.  I expect bugs on the margin.

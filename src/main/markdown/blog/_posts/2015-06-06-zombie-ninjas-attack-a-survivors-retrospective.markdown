@@ -4,13 +4,14 @@ title: "Zombie Ninjas Attack: A survivor's retrospective"
 date: 2011-07-03 5:59
 comments: true
 extraInfo: Front-matter is arbitrary
-slug: index
-categories:
+slug: weird/zombie-ninjas-attack
+category: Things That Are Strings
+categories: [lists, zombies, blog]
 ---
 
 This is an example blog from [Octopress](http://octopress.org) using a suggested post from the [docs](http://octopress.org/docs/blogging/).
 
-Imagine your blog or writing available only to a select few instead of the full internet...
+    If you want a way to host a private static site, consider [Hiram Pages](https://www.hirampages.com)
 
 You can include variables available in the other HTML files here as well.  For example, this build's git revision is %{{ gitRevShort }}%.
 

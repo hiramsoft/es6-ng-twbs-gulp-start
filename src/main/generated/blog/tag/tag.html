@@ -1,0 +1,13 @@
+---
+title: Artilcles tagged $key
+collection: categories
+filename: $key.html
+---
+
+{% extends '../../_layout/blog-collection.html' %}
+
+{% block collection_header %}
+
+Articles tagged <strong>%{{collectionKey}}%</strong>
+
+{% endblock %}
