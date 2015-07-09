@@ -27,6 +27,11 @@ Get started
 1. Clone or download this repository.
 2. I expect you to delete most of the content in src, especially the blog.  This site is a [Duck](http://blog.codinghorror.com/new-programming-jargon/).
 
+Demo
+========
+
+**[Live Demo on Hiram Software](https://www.hiramsoftware.com/es6-starter/index.html)**
+
 Notes for experienced people
 ---------
 
