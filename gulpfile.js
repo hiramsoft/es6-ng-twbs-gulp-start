@@ -121,7 +121,7 @@ var styleBundles = [
         id: "blog",
         lessIn : [baseMainPath + '/less/app.less'],
         sassIn : [],
-        cssIn : [baseMainPath + '/css/**/blog.css'], //////// Uncompiled legacy CSS to include
+        cssIn : [baseMainPath + '/css/blog.css'], //////// Uncompiled legacy CSS to include
         out : "blog"
     }
 ];
@@ -177,6 +177,11 @@ var swigOptions = {
     cache: false,
     varControls: ['%{{', '}}%']
 };
+
+var frontMatterOptions = { // optional configuration
+    property: 'frontMatter', // property added to file object
+    remove: true // should we remove front-matter header?
+}
 
 /**
  * Calculate the slug based on your own favorite logic
@@ -284,11 +289,8 @@ gulp.task('build-markdown-index', function(){
 
         // The first part of the pipeline previews the files
         // and is held by a latch stored inside "previewState"
-        gulp.src(_.union(htmlSrc, mdSrc))
-            .pipe(frontMatter({ // optional configuration
-                property: 'frontMatter', // property added to file object
-                remove: true // should we remove front-matter header?
-            }))
+        gulp.src(mdSrc)
+            .pipe(frontMatter(frontMatterOptions))
             .pipe(snippet("<!-- more -->"))
             .pipe(mergeFrontMatterIntoData())
             .pipe(ignoreDrafts())
@@ -324,10 +326,7 @@ gulp.task('build-markdown-index', function(){
 // Useful for building sitemaps, blog indexes, or tag (category) pages
 gulp.task('build-generated', ['build-markdown-index'], function() {
     return gulp.src(generatedSrc)
-        .pipe(frontMatter({ // optional configuration
-            property: 'frontMatter', // property added to file object
-            remove: true // should we remove front-matter header?
-        }))
+        .pipe(frontMatter(frontMatterOptions))
         .pipe(mergeFrontMatterIntoData())
         .pipe(ignoreDrafts())
         .pipe(generateIndicies())
@@ -359,10 +358,7 @@ gulp.task('build-html', ['build-markdown-index'], function() {
 // Renders markdown inside markdown folder as if each file was sitting inside the the HTML directory
 gulp.task('build-markdown', ['build-markdown-index'], function() {
     return gulp.src(mdSrc)
-        .pipe(frontMatter({ // optional configuration
-            property: 'frontMatter', // property added to file object
-            remove: true // should we remove front-matter header?
-        }))
+        .pipe(frontMatter(frontMatterOptions))
         .pipe(mergeFrontMatterIntoData())
         .pipe(ignoreDrafts())
         .pipe(renameLikeJekyll())

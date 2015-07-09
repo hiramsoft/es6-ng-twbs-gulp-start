@@ -160,7 +160,7 @@ All pages have available a Swig variable called "site" that includes global sett
 
 In particular, there are methods to be aware of that are designed for use in HREFs and SRCs:
 
-1. site.relpath(absurl): Given an absolute path suche as "/blog/" will compute the relative path i.e. "../../blog/"
+1. site.relpath(absurl): Given an absolute path such as "/blog/" will compute the relative path i.e. "../../blog/"
 2. site.docpath(absurl): Same as relpath, but additionally assume there is an html document in the path and will add "index.html" as needed.
 3. site.postpath(slug): Given a slug of a markdown post, compute the relative path to it.
 
